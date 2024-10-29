@@ -43,7 +43,7 @@ if __name__ == '__main__':
     dT = df['YEARS'][1] - df['YEARS'][0]
     # df.set_index('YEARS', inplace=True)
     # sig = df['X'] + 1j*df['Y']
-    sig = df['X']
+    sig = df['Y']
     signal = sig.values
     # wavelet = 'cmor'  # Комплексный вейвлет Морле
     # scales = np.arange(1, len(df['YEARS']))  # Масштабы (подбираются в зависимости от сигнала)
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     ar_noise = lfilter([1], ar_params, noise)
 
     # Сигнал с добавленным шумом
-    noisy_signal = Y + ar_noise
+    noisy_signal = X + ar_noise
 
     # Вейвлет-анализ (например, используя вейвлет Морле)
     coeffs, freqs = pywt.cwt(noisy_signal, scales=np.arange(1, 128), wavelet='morl')
@@ -93,9 +93,10 @@ if __name__ == '__main__':
 
     time = YEARS
     scales = np.arange(1, 128)
-    coeffs, freqs = pywt.cwt(X, scales, 'morl')
+    coeffs, freqs = pywt.cwt(noisy_signal, scales, 'morl')
 
     # Создаем 3D сетку: время, частоты (или масштабы), амплитуды вейвлет-преобразования
+    # np.arange(1, 128, 128 / len(noisy_signal))
     T, F = np.meshgrid(time, 1 / freqs)
     Z = np.abs(coeffs)  # Модуль коэффициентов как амплитуда
 
@@ -113,14 +114,14 @@ if __name__ == '__main__':
     plt.show()
 
     impulse_position = [100, 200, 300, 400, 542, 232, 111]
-    impulse_magnitude = 50
-    impulsive_signal = Y.copy()
+    impulse_magnitude = 100
+    impulsive_signal = X.copy()
     for ind in impulse_position:
         impulsive_signal[ind] += impulse_magnitude
 
     # Построение графика
     plt.plot(impulsive_signal)
-    plt.plot(noisy_signal)
+    # plt.plot(noisy_signal)
     plt.title("Сигнал с импульсом")
     plt.show()
 
