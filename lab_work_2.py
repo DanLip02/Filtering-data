@@ -6,11 +6,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from statsmodels.tsa.arima_process import ArmaProcess
 from scipy.fftpack import fft, fftfreq
-
+import math
 def polynom_coef(time, signal, deg=2):
+    print(np.polyfit(time, signal, deg))
     return np.polyfit(time, signal, deg)
 
 def polynom(coef, time):
+    print(np.polyval(coef, time))
     return np.polyval(coef, time)
 
 def autocovariance(signal_):
@@ -29,7 +31,7 @@ def ccf_(signal1, signal2):
 
 def plot_polynom(time, signal, polyn):
     plt.figure(figsize=(10, 6))
-    plt.plot(time, signal, 'b.', label='Original Signal X(t)')
+    plt.plot(time, signal, label='Original Signal X(t)')
     plt.plot(time, polyn, 'r-', label='Fitted Polynomial (degree 2)')
     plt.title('Polynomial Fit (Degree 2) to X(t)')
     plt.xlabel('Years')
@@ -50,9 +52,9 @@ def plot_autocov(acf_mean, acf_detrended, lags_mean, lags_detrended):
 
 def plot_spectrum(fft_mean, fft_detrended, fft_original, freqs, freqs_mean, freqs_detrended):
     plt.subplot(2, 1, 2)
-    plt.plot(freqs_mean, fft_mean, label='FFT of ACF (mean-subtracted)')
-    plt.plot(freqs_detrended, fft_detrended, label='FFT of ACF (polynomial-subtracted)')
-    plt.plot(freqs, fft_original, label='FFT of original X')
+    plt.plot(2 * math.pi * freqs_mean, fft_mean, label='FFT of ACF (mean-subtracted)')
+    plt.plot(2 * math.pi * freqs_detrended, fft_detrended, label='FFT of ACF (polynomial-subtracted)')
+    plt.plot(2 * math.pi * freqs, fft_original, label='FFT of original X')
     plt.title('Spectral Density')
     plt.legend()
     plt.grid(True)
@@ -60,6 +62,7 @@ def plot_spectrum(fft_mean, fft_detrended, fft_original, freqs, freqs_mean, freq
 
 def ccf_plot(lags, ccf):
     fig, ax =plt.subplots(figsize=(9, 6))
+    print(lags[np.argmax(ccf)])
     ax.plot(lags, ccf)
     ax.set_ylabel('Correlation', weight='bold', fontsize=12)
     ax.set_xlabel('Time Lags', weight='bold', fontsize = 12)
@@ -68,11 +71,11 @@ def ccf_plot(lags, ccf):
 
 def csf_plot(frequencies, cross_specturm):
     plt.figure(figsize=(10, 5))
-    plt.plot(frequencies[:len(frequencies) // 2], np.abs(cross_spectrum)[:len(frequencies) // 2],
+    plt.plot(2 * math.pi * frequencies[:len(frequencies) // 2], np.abs(cross_spectrum)[:len(frequencies) // 2],
              label='Cross-Spectrum')
     plt.title('Cross-Spectrum between X and Y (without lags)')
     plt.xlabel('Frequency')
-    plt.ylabel('Magnitude')
+    plt.ylabel('Amplitude')
     plt.grid(True)
     plt.legend()
     plt.show()
@@ -102,10 +105,10 @@ def plot_ARMA(acf_biased, acf_unbiased):
 
 def plot_spectr_ARMA(frequencies, spectral_density):
     plt.figure(figsize=(10, 5))
-    plt.plot(frequencies[:n_samples // 2], spectral_density[:n_samples // 2], label='Spectral Density')
+    plt.plot(2 * math.pi * frequencies[:n_samples // 2], spectral_density[:n_samples // 2], label='Spectral Density')
     plt.title('Spectral Density of ARMA Process')
     plt.xlabel('Frequency')
-    plt.ylabel('Magnitude')
+    plt.ylabel('Amplitude')
     plt.grid(True)
     plt.legend()
     plt.show()
@@ -151,22 +154,38 @@ if __name__ == '__main__':
 
     # Кросс-спектр: произведение FFT X на комплексно-сопряжённое FFT Y
     cross_spectrum = X_fft * np.conj(Y_fft)
-    frequencies = np.fft.fftfreq(len(X_mean), d=1)  # Частоты для оси
+    frequencies = np.fft.fftfreq(len(X_mean), dT)  # Частоты для оси
     csf_plot(frequencies, cross_spectrum)
 
     f, Pxy = signal.csd(X_mean, Y_mean)
     plt.semilogy(f, np.abs(Pxy))
-    plt.xlabel('frequency [Hz]')
-    plt.ylabel('CSD [V**2/Hz]')
+    plt.xlabel('frequency')
+    plt.ylabel('CSD')
     plt.show()
 
 
     #Task N. 4
-    ar = np.array([0.5, -0.25])  # Коэффициенты AR (авторегрессия)
-    ma = np.array([0.5, -0.3])  # Коэффициенты MA (скользящее среднее)
+    ar_1 = 0.5
+    ar_2 = 0.25
+    ar_3 = 0.1
+    ma_1 = -0.3
+    ma_2 = -0.2
+    ma_3 = 0.1
+    ar_root = np.array([-ar_1, -ar_2, -ar_3, 1])  # Коэффициенты AR (авторегрессия)
+    ma_root = np.array([-ma_1, -ma_2, -ma_3, 1])  # Коэффициенты MA (скользящее среднее)
+
+    ar = np.array([1, -1.8, 1.2, -0.5])  # Коэффициенты AR (авторегрессия)
+    ma = np.array([1, 0.5, -0.3, 0.2])  # Коэффициенты MA (скользящее среднее)
 
     roots = np.roots(ar)
+    # print(np.roots(ar))
+    # print(np.roots(ma))
+    print(np.roots(ar_root))
+    print(np.roots(ma_root))
     print(f"Корни полинома AR: {roots}")
+
+    ar = np.array([ar_1, ar_2, ar_3])  # Коэффициенты AR (авторегрессия)
+    ma = np.array([ma_1, ma_2, ma_3])  # Коэффициенты MA (скользящее среднее)
     if np.all(np.abs(roots) > 1):
         print("Модель ARMA устойчива (все корни вне единичного круга).")
     else:
@@ -184,7 +203,7 @@ if __name__ == '__main__':
     fft_result = fft(ARMA)
     frequencies = fftfreq(n_samples)
     spectral_density = np.abs(fft_result)
-    plot_spectr_ARMA(frequencies, spectral_density)
+    plot_spectr_ARMA(2 * math.pi * frequencies, spectral_density)
 
 
 

@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
+import math
 # Чтение данных из файла
 # filename = r'/Users/danilalipatov/Downloads/Lab1/AAMWPgfz0.050-year.dat'
 #
@@ -45,7 +45,9 @@ N = len(X)
 X_fft = np.fft.fft(X) / N
 Y_fft = np.fft.fft(Y) / N
 freqs = np.fft.fftfreq(N, dT)
+positive_frequencies_period = freqs[:N // 2]
 
+freqs = 2 * math.pi * freqs
 # Ограничение до положительных частот
 positive_frequencies = freqs[:N // 2]
 X_fft_pos = X_fft[:N // 2]
@@ -71,16 +73,18 @@ plt.show()
 # Периоды
 plt.figure(figsize=(12, 6))
 plt.subplot(2, 1, 1)
-plt.plot(1 / positive_frequencies, np.abs(X_fft_pos), label="X Periodogram")
+plt.plot(1 / positive_frequencies_period, np.abs(X_fft_pos), label="X Periodogram")
 plt.xlabel('Period')
+plt.xscale('log')
 plt.ylabel('Amplitude')
 plt.title('Periodogram for X')
 plt.grid(True)
 
 plt.subplot(2, 1, 2)
-plt.plot(1 / positive_frequencies, np.abs(Y_fft_pos), label="Y Periodogram", color="red")
+plt.plot(1 / positive_frequencies_period, np.abs(Y_fft_pos), label="Y Periodogram", color="red")
 plt.xlabel('Period')
 plt.ylabel('Amplitude')
+plt.xscale('log')
 plt.title('Periodogram for Y')
 plt.grid(True)
 plt.show()
@@ -93,7 +97,7 @@ complex_fft = np.fft.fft(complex_signal) / N
 plt.figure(figsize=(12, 6))
 plt.plot(freqs, np.abs(complex_fft), label="Complex Spectrum", color="purple")
 plt.xlabel('Frequency')
-plt.ylabel('Amplitude')
+plt.ylabel('Amplitude ')
 plt.title('Amplitude Spectrum for Complex Signal')
 plt.grid(True)
 plt.show()
@@ -111,7 +115,7 @@ amplitude_k = np.abs(C_k)
 amplitude_minus_k = np.abs(C_minus_k)
 phase_k = np.angle(C_k)
 phase_minus_k = np.angle(C_minus_k)
-
+print(freqs)
 print(f"Dominant frequency: {dominant_freq}")
 print(f"Amplitude for positive frequency (C_k): {amplitude_k}")
 print(f"Phase for positive frequency (C_k): {phase_k}")
@@ -124,7 +128,7 @@ N = len(chi)  # Количество точек данных
 
 # БПФ для комплексного сигнала χ
 chi_fft = np.fft.fft(chi) / N
-freqs = np.fft.fftfreq(N, dT)
+freqs = 2 * math.pi * np.fft.fftfreq(N, dT)
 
 # Определяем положительные и отрицательные частоты
 positive_frequencies = freqs[:N // 2]
@@ -148,8 +152,8 @@ phase_minus_k = np.angle(C_minus_k)  # Фаза для отрицательно�
 # Вывод результатов
 print('C_k', C_k)
 print('C_-k', C_minus_k)
-print(f"Dominant frequency: {dominant_freq} Hz")
-print(f"Dominant frequency: {dominant_freq_neg} Hz")
+print(f"Dominant frequency: {dominant_freq}")
+print(f"Dominant frequency: {dominant_freq_neg}")
 print(f"Amplitude for positive frequency (C_k): {amplitude_k}")
 print(f"Phase for positive frequency (C_k): {phase_k} rad")
 print(f"Amplitude for negative frequency (C_-k): {amplitude_minus_k}")
@@ -158,7 +162,7 @@ print(f"Phase for negative frequency (C_-k): {phase_minus_k} rad")
 # Визуализация спектра
 plt.figure(figsize=(10, 6))
 plt.plot(positive_frequencies, np.abs(chi_fft[:N // 2]), label="Amplitude Spectrum")
-plt.xlabel('Frequency (Hz)')
+plt.xlabel('Frequency')
 plt.ylabel('Amplitude')
 plt.title('Amplitude Spectrum of Complex Signal')
 plt.grid(True)
@@ -226,7 +230,7 @@ X_model_fft_pos = X_model_fft[:len(X_model) // 2]
 
 # Построение амплитудного спектра для модельного сигнала
 plt.figure(figsize=(10, 6))
-plt.plot(positive_frequencies_model, np.abs(X_model_fft_pos), label="Model Signal Spectrum", color="green")
+plt.plot(2 * math.pi * positive_frequencies_model, np.abs(X_model_fft_pos), label="Model Signal Spectrum", color="green")
 plt.xlabel('Frequency')
 plt.ylabel('Amplitude')
 plt.title('Amplitude Spectrum of Model Signal')
@@ -239,8 +243,8 @@ X_fft_pos = np.fft.fft(Y)[:len(Y) // 2] / len(Y)
 positive_frequencies = np.fft.fftfreq(len(Y), YEARS[1] - YEARS[0])[:len(Y) // 2]
 
 plt.figure(figsize=(10, 6))
-plt.plot(positive_frequencies, np.abs(X_fft_pos), label="Real Signal Spectrum", color="blue")
-plt.plot(positive_frequencies_model, np.abs(X_model_fft_pos), label="Model Signal Spectrum", color="orange", linestyle="--")
+plt.plot(2 * math.pi * positive_frequencies, np.abs(X_fft_pos), label="Real Signal Spectrum", color="blue")
+plt.plot(2 * math.pi * positive_frequencies_model, np.abs(X_model_fft_pos), label="Model Signal Spectrum", color="orange", linestyle="--")
 plt.xlabel('Frequency')
 plt.ylabel('Amplitude')
 plt.title('Real vs Model Signal Spectrum')
@@ -280,7 +284,16 @@ spectr, omega = ampl_fft(complex_signal, dT)
 
 # Построение графика спектра
 plt.figure()
-plt.plot(1.0 / (omega / (2 * np.pi)), np.abs(spectr))  # 1/omega для периода
+plt.plot((1.0 / (omega / (2 * np.pi)))[:N // 2], np.abs(spectr)[:N // 2])  # 1/omega для периода
+plt.xlabel('Period (years)')
+plt.xscale('log')
+plt.ylabel('Amplitude')
+plt.title('Frequency Spectrum')
+plt.grid(True)
+plt.show()
+
+plt.figure()
+plt.plot((1.0 / (omega / (2 * np.pi))), np.abs(spectr))  # 1/omega для периода
 plt.xlabel('Period (years)')
 plt.ylabel('Amplitude')
 plt.title('Frequency Spectrum')
