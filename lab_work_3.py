@@ -92,6 +92,7 @@ if __name__ == '__main__':
     # coefficients, frequencies = pywt.cwt(signal, scales, wavelet, sampling_period=1)
     # plot_pywt(coefficients, signal, scales)
     wavelet = 'cmor'  # вейвлет Морле
+    # wavelet = 'morl'  # вейвлет Морле
     max_l = 128
     scales = np.arange(1, max_l)  # Масштабы
 
