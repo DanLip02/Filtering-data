@@ -17,7 +17,7 @@ def plot_pywt(coefficients, signal, scales):
     plt.title('Wavelet spectrogram of LOD signal')
     plt.show()
 
-def plot_AR_noise(coeffs, noisy_signal, n, X):
+def plot_AR_noise(coeffs, noisy_signal,n, X, scales):
     plt.figure(figsize=(10, 6))
     plt.subplot(2, 1, 1)
     plt.plot(noisy_signal, color='blue')
@@ -26,7 +26,7 @@ def plot_AR_noise(coeffs, noisy_signal, n, X):
 
     plt.subplot(2, 1, 2)
     # plt.imshow(np.abs(coeffs), extent=[0, n, 1, 128], cmap='viridis', aspect='auto')
-    plt.imshow(np.abs(coeffs), cmap='viridis', aspect='auto')
+    plt.imshow(np.abs(coeffs), origin='upper', cmap='viridis', aspect='auto')
     plt.title("Wavelet transform with noise")
     plt.xlabel("Time")
     plt.ylabel("Scales")
@@ -91,8 +91,8 @@ if __name__ == '__main__':
     # scales = np.arange(1, len(df['YEARS']))  # Масштабы (подбираются в зависимости от сигнала)
     # coefficients, frequencies = pywt.cwt(signal, scales, wavelet, sampling_period=1)
     # plot_pywt(coefficients, signal, scales)
-    wavelet = 'morl'  # вейвлет Морле
-    max_l = 400
+    wavelet = 'cmor'  # вейвлет Морле
+    max_l = 128
     scales = np.arange(1, max_l)  # Масштабы
 
     # Вычисление CWT для компоненты Z
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     plt.suptitle('CWT analysis of X component at different scales')
     plt.show()
     years = np.linspace(df['YEARS'].min(), df['YEARS'].max(), 708)  # Интерполяция для 708 точек
-    plt.imshow(np.abs(coefficients_z), cmap='viridis', aspect='auto', extent=[years[0], years[-1], scales[0], scales[-1]])
+    plt.imshow(np.abs(coefficients_z), cmap='viridis', aspect='auto', extent=[years[0], years[-1], scales[-1], scales[0]])
     plt.xlabel('Years')
     plt.ylabel('Scale')
     plt.show()
@@ -131,8 +131,8 @@ if __name__ == '__main__':
     X = data['X']
     Y = data['Y']
     # Генерация авторегрессионного шума
-    ar_params = [0.125, -0.55, -0.15, 0.35]  # коэффициенты AR(4)
-
+    # ar_params = [0.125, -0.55, -0.15, 0.35]  # коэффициенты AR(4)
+    ar_params = [0.8, -0.3, -0.5, 0.7]
     noise = np.random.normal(0, 1.1, len(X))
 
     ar_noise = np.zeros(len(X))
@@ -144,10 +144,10 @@ if __name__ == '__main__':
 
     # Вейвлет-анализ (например, используя вейвлет Морле)
 
-    coeffs, freqs = pywt.cwt(noisy_signal, scales=np.arange(1, 40), wavelet='morl')
+    coeffs, freqs = pywt.cwt(noisy_signal, scales=np.arange(1, 128), wavelet='morl')
     print(coeffs)
     print(freqs)
-    plot_AR_noise(coeffs, noisy_signal, len(X), X)
+    plot_AR_noise(coeffs, noisy_signal, len(X), X, np.arange(1, 40))
 
     time = YEARS
     scales = np.arange(1, 128)
@@ -186,13 +186,13 @@ if __name__ == '__main__':
     coeffs_imp, freqs_imp = pywt.cwt(impulsive_signal, scales=scales, wavelet='morl')
 
     # Визуализация вейвлет-преобразования
-    plt.imshow(np.abs(coeffs_imp), extent=[0, len(X), 1, 128], cmap='viridis', aspect='auto')
+    plt.imshow(np.abs(coeffs_imp), extent=[0, len(X), 128, 1], cmap='viridis', aspect='auto')
     plt.title("Wavelet transform of a impulse signal")
     plt.xlabel("Time")
     plt.ylabel("Scales")
-    # plt.show()
+    plt.show()
     for pos in impulse_position:
-            plt.plot([pos, pos - 64 / 2, pos + 64 / 2, pos],
-                     [128, 1, 1, 128], 'w-', alpha=0.5)
+            plt.plot([pos, pos - 20 / 2, pos + 20 / 2, pos],
+                     [1, 40, 40, 1], 'w-', alpha=0.5)
     plt.show()
     example_urge(YEARS, noisy_signal)
