@@ -1,4 +1,4 @@
-# Filetring Data Repository
+# Filtуring Data Repository
 
 This repository is dedicated to filtering and analyzing data as part of laboratory assignments. It contains:
 
@@ -16,19 +16,17 @@ For each laboratory assignment, there is an associated Python script available. 
 - [Lab 4 script](./lab_work_4.py)
 - [Lab 5 script](./lab_work_5.py)
 
-*(Replace `Lab 1`, `Lab 2`, etc., with the actual lab numbers/names and update the script paths accordingly.)*
 
 ### 3. **Links to Assignments**
 You can find the original assignment descriptions and requirements here:
 
 - [Assignment Page](http://lnfm1.sai.msu.ru/grav/russian/lecture/filtr/)
 
-*(Replace the URLs above with actual links to the assignment pages.)*
 
 ## How to Use
 1. Clone the repository:  
    ```bash
-   git clone https://github.com/yourusername/filetring_data.git
+   git clone https://github.com/DanLip02/Filtering-data
    ```
 2. Navigate to the desired script or report.
 3. Follow the instructions provided in the scripts or reports for running the analyses.
