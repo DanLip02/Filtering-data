@@ -1,4 +1,4 @@
-# Filtуring Data Repository
+# Filtering Data Repository
 
 This repository is dedicated to filtering and analyzing data as part of laboratory assignments. It contains:
 
