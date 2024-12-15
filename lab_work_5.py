@@ -100,3 +100,119 @@ spectr_dens_un = np.fft.fft(acf_un)
 plt.plot(freqs, np.abs(np.fft.fftshift(spectr_dens_un)), linestyle="--", color='orange')
 plt.title("Spectral Density of ACF")
 plt.show()
+
+
+# Спектральная плотность (FFT от ACF)
+n_white = N_signal
+n_color = N_signal
+freqs_white = np.fft.fftshift(np.fft.fftfreq(n_white))  #
+freqs_color = np.fft.fftshift(np.fft.fftfreq(n_color))  #
+spectr_dens_white = np.fft.fft(signal + eps)
+plt.plot(freqs_white, np.abs(np.fft.fftshift(spectr_dens_white)), label='white noise')
+spectr_dens_color = np.fft.fft(signal + ar)
+plt.plot(freqs_color, np.abs(np.fft.fftshift(spectr_dens_color)), linestyle="--", color='orange', label='color noise')
+plt.title("Spectral Density of ACF with white and color")
+plt.yscale('log')
+plt.legend()
+plt.show()
+
+
+# Параметры для гармоник
+a = 18  # День рождения
+b = 10   # Месяц рождения
+c = 2002  # Год рождения
+
+# Периоды (в годах)
+T1 = 0.5
+T2 = 1
+T3 = 4.6
+
+# Амплитуды гармоник, нормализованные
+A1 = (a / 31) * 20
+A2 = (b / 12) * 20
+A3 = ((c - 2000) / 50) * 20
+
+# Временная шкала
+N = 1024  # Количество точек данных как в реальном сигнале
+t = np.linspace(0, N * 0.05, N)  # Время в годах от 2000 года
+print(t)
+# Фазы, чтобы косинус обнулялся в 2000 году
+phi1 = np.pi / 2
+phi2 = np.pi / 2
+phi3 = np.pi / 2
+# Модельный сигнал как сумма трёх гармоник
+X_model = (A1 * np.cos(2 * np.pi * t / T1 + phi1) +
+           A2 * np.cos(2 * np.pi * t / T2 + phi2) +
+           A3 * np.cos(2 * np.pi * t / T3 + phi3))
+
+eps = 2.2 * np.random.randn(N_signal)
+# Сигнал с шумом
+plt.plot(k, X_model + eps, linestyle="--", color='orange', label='signal with noise')
+plt.plot(k, X_model, label='current signal')
+plt.legend()
+plt.title("Signal with noise")
+plt.show()
+
+# Построение сигнала с добавленным ARMA процессом
+plt.plot(k, X_model + ar)
+plt.title("Signal with ARMA Process")
+plt.show()
+
+# Быстрое преобразование Фурье (FFT)
+spectr = np.fft.fft(X_model + ar)
+plt.plot(np.abs(spectr))
+plt.title("FFT of signal with ARMA process")
+plt.show()
+
+final_signal = X_model + ar
+# Вычисление автокорреляционной функции (ACF)
+signal_centered = final_signal - np.mean(final_signal)
+
+acf = np.zeros(N_signal)
+acf_un = np.zeros(N_signal)
+# Вычисление смещенной оценки АКФ
+for tau in range(1, N_signal + 1):
+    for j in range(N_signal - tau):
+        acf[tau - 1] += signal_centered[j] * signal_centered[j + tau - 1]
+    acf[tau - 1] /= N_signal  # Скалирование на размер сигнала
+
+for tau in range(1, N_signal + 1):
+    for j in range(N_signal - tau):
+        acf_un[tau - 1] += signal_centered[j] * signal_centered[j + tau - 1]
+    acf_un[tau - 1] /= (N_signal - tau + 1)  # Нормализация на оставшееся число пар
+
+# Построение графика АКФ
+plt.plot(acf, label="Biased ACF", color='blue')
+plt.plot(acf_un, label="Unbiased ACF", linestyle="--", color='orange')
+plt.title("Autocorrelation Function (ACF)")
+plt.xlabel("Lag")
+plt.ylabel("Autocorrelation")
+plt.grid()
+plt.legend()
+plt.show()
+
+# Спектральная плотность (FFT от ACF)
+n = len(acf_un)
+n_bias = len(acf)
+freqs_bias = np.fft.fftshift(np.fft.fftfreq(n_bias))  #
+freqs = np.fft.fftshift(np.fft.fftfreq(n))  #
+spectr_dens = np.fft.fft(acf)
+plt.plot(freqs_bias, np.abs(np.fft.fftshift(spectr_dens)))
+spectr_dens_un = np.fft.fft(acf_un)
+plt.plot(freqs, np.abs(np.fft.fftshift(spectr_dens_un)), linestyle="--", color='orange')
+plt.title("Spectral Density of ACF")
+plt.show()
+
+# Спектральная плотность (FFT от ACF)
+n_white = N_signal
+n_color = N_signal
+freqs_white = np.fft.fftshift(np.fft.fftfreq(n_white))  #
+freqs_color = np.fft.fftshift(np.fft.fftfreq(n_color))  #
+spectr_dens_white = np.fft.fft(X_model + eps)
+plt.plot(freqs_white, np.abs(np.fft.fftshift(spectr_dens_white)), label='white noise')
+spectr_dens_color = np.fft.fft(X_model + ar)
+plt.plot(freqs_color, np.abs(np.fft.fftshift(spectr_dens_color)), linestyle="--", color='orange', label='color noise')
+plt.title("Spectral Density of ACF with white and color")
+plt.yscale('log')
+plt.legend()
+plt.show()
