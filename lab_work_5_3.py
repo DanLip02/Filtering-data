@@ -295,7 +295,7 @@ acf_bias = np.correlate(signal_centered, signal_centered, mode='full')[N - 1:] /
 acf_unbias = np.correlate(signal_centered, signal_centered, mode='full')[N - 1:] / (N - np.arange(N))
 
 # Построение графика
-dt = 0.05
+# dt = 0.05
 plt.figure(figsize=(10, 6))
 
 # График смещенной оценки АКФ
@@ -318,7 +318,7 @@ spectrum= np.fft.fft(acf)
 freqs = np.fft.fftshift(np.fft.fftfreq(len(acf)))  #
 plt.plot(freqs, np.abs(np.fft.fftshift(spectrum)))
 plt.show()
-pred_dates = np.arange(2025, 2040)
+pred_dates = np.arange(2025, 2040, dt)
 detrended_signal, poly_pred = predict_poly(time, signal, pred_dates, degree=3)
 
 plt.plot(time, signal, label="Original Signal")
@@ -328,20 +328,20 @@ plt.legend()
 plt.show()
 
 periods = [1, 4.6, 2]
-pred_dates = np.arange(2025,  2040)
+pred_dates = np.arange(2025,  2040, dt)
 detrended_signal_harm, harm_pred = predict_harm(time,  detrended_signal, periods, pred_dates)
 
 # График детрендированного сигнала
 plt.figure(figsize=(12, 6))
 plt.plot(time, detrended_signal, label="Detranded signal", color='blue')
-plt.plot(time, signal, label="исход сигнал", color='red', linestyle=':')
+plt.plot(time, signal, label="Based signal", color='red', linestyle=':')
 # График гармонического предсказания
-plt.plot(pred_dates, harm_pred, label="Предсказание гармоник", color='orange', linestyle='--')
+plt.plot(pred_dates, harm_pred, label="Prediction of harm", color='orange', linestyle='--')
 
 # Настройка легенды и подписей
-plt.xlabel("Время")
-plt.ylabel("Амплитуда")
-plt.title("Гармонический анализ и предсказание")
+plt.xlabel("Time")
+plt.ylabel("Amplitude")
+plt.title("Harmonic Analysis and Prediction")
 plt.legend()
 plt.grid(True)
 plt.show()

@@ -1,75 +1,90 @@
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.fft import fftn
+import scipy
 from scipy.linalg import inv
-from numpy.polynomial.polynomial import Polynomial
 
 
-def harm_fit_homo(dates, signal, periods, date_start):
-    """
-    Least Squares Harmonic Fit
-    dates: array of dates
-    signal: signal data
-    periods: array of periods
-    date_start: starting date
-    """
-    N = len(signal)
-    M = len(periods)
-    signal_centered = signal - np.mean(signal)
-
-    # Build design matrix
-    A = np.ones((N, 2 * M))
-    for i in range(N):
-        for j in range(M):
-            omega = 2 * np.pi / periods[j]
-            A[i, 2 * j] = np.cos((dates[i] - date_start) * omega)
-            A[i, 2 * j + 1] = np.sin((dates[i] - date_start) * omega)
-
-    # Solve normal equations
-    AtA = A.T @ A
-    Atb = A.T @ signal_centered
-    coeffs = inv(AtA) @ Atb
-
-    # Predicted signal
-    model = A @ coeffs
-
-    # Variance estimation
-    residuals = signal_centered - model
-    variance = np.sum(residuals ** 2) / (N - 2 * M)
-    covariance_matrix = variance * inv(AtA)
-
-    return coeffs, model, covariance_matrix
-
-
-def predict_poly(dates, signal, pred_dates, degree):
+def predict_poly_last(dates, signal, pred_dates, degree):
     """
     Polynomial Trend Prediction
-    dates: array of dates
-    signal: input signal
-    pred_dates: dates for prediction
-    degree: degree of polynomial
+    dates: array of dates - массив временных меток
+    signal: input signal - временной ряд (сигнал)
+    pred_dates: dates for prediction - даты, для которых нужно построить прогноз
+    degree: degree of polynomial - степень полинома
     """
+    # 1. Аппроксимация временного ряда полиномом
     p_coef = np.polyfit(dates, signal, degree)
+
+    # 2. Построение модели полинома на известных данных
     poly_model = np.polyval(p_coef, dates)
+
+    # 3. Построение прогноза для будущих дат
     poly_pred = np.polyval(p_coef, pred_dates)
 
+    # 4. Удаление полиномиального тренда из сигнала
     detrended_signal = signal - poly_model
 
     return detrended_signal, poly_pred
 
+def harm_fit_homo(dates, signal, periods, date_start):
+    """
+    Least Squares Harmonic Fit
+    Осуществляет гармонический анализ временного ряда методом наименьших квадратов.
 
-def predict_harm(dates, signal, periods, pred_dates):
+    Параметры:
+    - dates: массив временных меток.
+    - signal: массив значений сигнала.
+    - periods: массив предполагаемых периодов гармонических компонент.
+    - date_start: начальная временная точка для расчета фаз.
+
+    Возвращает:
+    - coeffs: массив коэффициентов гармонической модели (амплитуды и фазы).
+    - model: массив значений восстановленного сигнала (гармоническая модель).
+    - covariance_matrix: ковариационная матрица коэффициентов (оценка погрешности).
+    """
+    N = len(signal)  # Количество точек сигнала
+    M = len(periods)  # Количество периодов гармоник
+    signal_centered = signal - np.mean(signal)  # Центрирование сигнала
+
+    # Построение дизайн-матрицы
+    A = np.ones((N, 2 * M))
+    for i in range(N):  # Для каждой временной точки
+        for j in range(M):  # Для каждого периода
+            omega = 2 * np.pi / periods[j]  # Угловая частота гармоники
+            A[i, 2 * j] = np.cos((dates[i] - date_start) * omega)
+            A[i, 2 * j + 1] = np.sin((dates[i] - date_start) * omega)
+
+    # Решение нормальных уравнений методом наименьших квадратов
+    AtA = A.T @ A  # Матрица А транспонированная на А
+    Atb = A.T @ signal_centered  # Матрица А транспонированная на центрированный сигнал
+    coeffs = inv(AtA) @ Atb  # Коэффициенты гармонической модели
+
+    # Построение гармонической модели
+    model = A @ coeffs
+
+    # Оценка дисперсии остатков
+    residuals = signal_centered - model  # Остатки (разность сигнала и модели)
+    variance = np.sum(residuals ** 2) / (N - 2 * M)  # Дисперсия остатков
+    covariance_matrix = variance * inv(AtA)  # Ковариационная матрица коэффициентов
+
+    return coeffs, model, covariance_matrix
+
+def predict_harm_last(dates, signal, periods, pred_dates):
     """
     Harmonic Prediction
-    dates: array of dates
-    signal: input signal
-    periods: array of periods
-    pred_dates: dates for prediction
+    dates: array of dates - массив временных меток
+    signal: input signal - временной ряд (сигнал)
+    periods: array of periods - массив периодов гармоник
+    pred_dates: dates for prediction - даты, для которых нужно построить прогноз
     """
+    # 1. Гармонический анализ на основе метода наименьших квадратов
     coeffs, harmonic_model, _ = harm_fit_homo(dates, signal, periods, dates[0])
+
+    # 2. Удаление гармонического сигнала (остаточный сигнал)
     detrended_signal = signal - harmonic_model
 
-    # Predict harmonics for new dates
+    # 3. Прогнозирование гармонических компонент на новые даты
     pred_harmonics = np.zeros(len(pred_dates))
     for k, period in enumerate(periods):
         omega = 2 * np.pi / period
@@ -79,99 +94,309 @@ def predict_harm(dates, signal, periods, pred_dates):
     return detrended_signal, pred_harmonics
 
 
-def predict_ar(dates, signal, pred_dates, order):
+# def predict_ar(dates, signal, pred_dates, order):
+#     """
+#     Autoregression Prediction (AR)
+#
+#     dates: array-like
+#         Временные метки для исходного сигнала.
+#     signal: array-like
+#         Исходный временной ряд для анализа.
+#     pred_dates: array-like
+#         Временные метки, на которых будет строиться предсказание.
+#     order: int
+#         Порядок модели авторегрессии (количество лагов).
+#     """
+#     from statsmodels.tsa.ar_model import AutoReg
+#
+#     # Построение модели авторегрессии
+#     model = AutoReg(signal, lags=order, old_names=False).fit()
+#
+#     # Прогнозирование на новых временных точках
+#     ar_pred = model.predict(start=len(signal), end=len(signal) + len(pred_dates) - 1)
+#
+#     return ar_pred, model.params
+
+def predict_ar(mjd_sc, xin, mjd_pred, ar_order):
+
     """
-    Autoregression Prediction
-    dates: array of dates
-    signal: input signal
-    pred_dates: dates for prediction
-    order: order of autoregression
+    Model autoregression and predict next values.
+
+    Parameters:
+    mjd_sc (array): Time steps of the input signal.
+    xin (array): Input data.
+    mjd_pred (array): Dates to predict.
+    ar_order (int): Order of the autoregression model.
+
+    Returns:
+    xar_pred (array): Predicted values.
+    model_params (array): Coefficients of the autoregression model.
     """
+
     from statsmodels.tsa.ar_model import AutoReg
+    # Centering the input signal
+    mean_xin = np.mean(xin)
+    xin_centered = xin - mean_xin
 
-    model = AutoReg(signal, lags=order, old_names=False).fit()
-    ar_pred = model.predict(start=len(signal), end=len(signal) + len(pred_dates) - 1)
+    # Fit AR model
+    ar_model = AutoReg(xin_centered, lags=ar_order, old_names=False).fit()
+    model_params = ar_model.params
 
-    return ar_pred, model.params
+    # Generate white noise for prediction
+    noise_variance = ar_model.sigma2
+    white_noise = np.sqrt(noise_variance) * np.random.randn(len(mjd_pred))
 
+    # Initialize input values for prediction
+    inp = np.flip(xin_centered[-ar_order:])
 
-def spect_fftn(dates, signal):
+    # Predict N_p points
+    xar_pred = []
+    for j in range(len(mjd_pred)):
+        pred_value = -np.dot(model_params[1:], inp) + white_noise[j]
+        xar_pred.append(pred_value)
+        inp = np.roll(inp, 1)
+        inp[0] = pred_value
+
+    # Add the mean back to the predictions
+    xar_pred = np.array(xar_pred) + mean_xin
+
+    # Plot results
+    plt.plot(mjd_sc, xin, label="Original Signal")
+    plt.plot(mjd_pred, xar_pred, color='red', label="AR Prediction")
+    plt.legend()
+    plt.title(f"Autoregression Prediction (Order {ar_order})")
+    plt.xlabel("Time")
+    plt.ylabel("Signal")
+    plt.show()
+
+    return xar_pred, model_params
+
+def predict_poly(dates, signal, pred_dates, degree):
     """
-    Spectrum Analysis using FFT
-    dates: array of equally spaced dates
-    signal: input signal
+    Predicts a polynomial model of a given degree and removes it from the signal.
+
+    Parameters:
+    dates (array): Initial dates of the signal.
+    signal (array): Signal data.
+    pred_dates (array): Dates for prediction.
+    degree (int): Degree of the polynomial (e.g., 2 for quadratic, 1 for linear).
+
+    Returns:
+    tuple:
+        - detrended_signal (array): Signal after removing the polynomial model.
+        - poly_pred (array): Predictions based on the polynomial model for pred_dates.
     """
-    N = len(signal)
-    dt = dates[1] - dates[0]
+    # Fit a polynomial model to the data
+    p_coef = np.polyfit(dates, signal, degree)
 
-    spectrum = fftn(signal)
-    freqs = np.fft.fftfreq(N, d=dt)
+    # Evaluate the polynomial model on the original dates
+    poly_model = np.polyval(p_coef, dates)
 
-    return spectrum, freqs
+    # Detrend the signal by removing the polynomial model
+    detrended_signal = signal - poly_model
 
+    # Predict the polynomial values for the new dates
+    poly_pred = np.polyval(p_coef, pred_dates)
 
-# Main script for Lab5
-def lab5_main():
-    filename = f"/Users/danilalipatov/Downloads/Lab5 2/v3/amon.us.long.dat"
+    # Plot the results
+    plt.figure(figsize=(10, 6))
+    plt.plot(dates, signal, '--', label="Original Signal")
+    plt.plot(dates, poly_model, '-', label=f"Polynomial Model (degree={degree})")
+    plt.plot(pred_dates, poly_pred, label="Polynomial Prediction", color='red')
+    plt.legend()
+    plt.xlabel("Dates")
+    plt.ylabel("Signal")
+    plt.title("Polynomial Model and Prediction")
+    plt.grid()
+    plt.show()
 
-    # Load data
-    data = np.loadtxt(filename).T
-    dates = data[0]
-    signal = data[1]
+    return detrended_signal, poly_pred
 
-    # Autocovariance Function (ACF)
-    N = len(signal)
+def predict_harm(dates, signal, periods, pred_dates):
+    """
+    Least Squares fit and prediction of harmonics.
+
+    Parameters:
+    dates (array): Initial dates.
+    signal (array): Signal to be modeled.
+    periods (array): Array of periods for harmonic fitting.
+    pred_dates (array): Dates for prediction.
+
+    Returns:
+    tuple:
+        - detrended_signal (array): Signal after removing harmonic model.
+        - harm_pred (array): Predictions based on harmonic model for pred_dates.
+    """
+    # Center the signal
     signal_centered = signal - np.mean(signal)
-    acf = np.correlate(signal_centered, signal_centered, mode='full')[N - 1:] / N
 
-    # Plot ACF
-    dt = 0.05
-    plt.plot(np.arange(N) * dt, acf)
-    plt.title("Autocovariance Function")
-    plt.show()
+    # Harmonic fit
+    N = len(signal)
+    M = len(periods)
+    A = np.zeros((N, 2 * M))
 
-    # Power Spectral Density
-    spectrum, freqs = spect_fftn(dates, acf)
-    plt.plot(1 / freqs[1:N // 2], np.abs(spectrum[1:N // 2]))
-    plt.title("Power Spectral Density")
-    plt.show()
+    for i in range(N):
+        for j in range(M):
+            omega = 2 * np.pi / periods[j]
+            A[i, 2 * j] = np.cos((dates[i] - dates[0]) * omega)
+            A[i, 2 * j + 1] = np.sin((dates[i] - dates[0]) * omega)
 
-    # Polynomial Trend Removal
-    pred_dates = np.arange(dates[-1], 2050, dt)
-    detrended_signal, poly_pred = predict_poly(dates, signal, pred_dates, degree=3)
+    AtA = A.T @ A
+    Atb = A.T @ signal_centered
+    coeffs = np.linalg.inv(AtA) @ Atb
+
+    # Compute harmonic model
+    harmonic_model = A @ coeffs
+    detrended_signal = signal - harmonic_model
+
+    # Predict harmonics for new dates
+    N_pred = len(pred_dates)
+    harm_pred = np.zeros(N_pred)
+
+    for k, period in enumerate(periods):
+        omega = 2 * np.pi / period
+        harm_pred += coeffs[2 * k] * np.cos((pred_dates - dates[0]) * omega)
+        harm_pred += coeffs[2 * k + 1] * np.sin((pred_dates - dates[0]) * omega)
+
+    # Plot the results
+    plt.figure(figsize=(10, 6))
     plt.plot(dates, signal, label="Original Signal")
-    plt.plot(dates, detrended_signal, label="Detrended Signal")
-    plt.plot(pred_dates, poly_pred, label="Polynomial Prediction")
+    plt.plot(dates, harmonic_model, label="Harmonic Model", linestyle='--')
+    # plt.plot(dates, detrended_signal, label="Detrended Signal")
+    plt.plot(pred_dates, harm_pred, label="Harmonic Prediction", color='red')
     plt.legend()
+    plt.xlabel("Dates")
+    plt.ylabel("Signal")
+    plt.title("Harmonic Model and Prediction")
+    plt.grid()
     plt.show()
 
-    # Harmonic Analysis
-    periods = [1, 4.6, 0.5]
-    detrended_signal_harm, harm_pred = predict_harm(dates, detrended_signal, periods, pred_dates)
-    plt.plot(dates, detrended_signal, label="Detrended Signal")
-    plt.plot(pred_dates, harm_pred, label="Harmonic Prediction")
-    plt.legend()
-    plt.show()
-
-    # Autoregression Prediction
-    ar_order = 5
-    ar_pred, _ = predict_ar(dates, detrended_signal_harm, pred_dates, ar_order)
-    plt.plot(dates, detrended_signal_harm, label="Signal After Harmonics")
-    plt.plot(pred_dates, ar_pred, label="AR Prediction")
-    plt.legend()
-    plt.show()
-
-    # Combine Predictions
-    combined_pred = harm_pred + poly_pred + ar_pred
-    plt.plot(dates, signal, label="Original Signal")
-    plt.plot(pred_dates, combined_pred, label="Combined Prediction")
-    plt.legend()
-    plt.show()
-
-    # Save predictions
-    output_file = f"AAM_prediction.dat"
-    np.savetxt(output_file, np.column_stack((pred_dates, combined_pred)), fmt="%10.8e", header="Date Prediction")
+    return detrended_signal, harm_pred
 
 
-if __name__ == "__main__":
-    lab5_main()
+N_signal = 1024
+# Параметры для гармоник
+a = 18  # День рождения
+b = 10   # Месяц рождения
+c = 2002  # Год рождения
+
+# Периоды (в годах)
+T1 = 0.5
+T2 = 1
+T3 = 4.6
+
+# Амплитуды гармоник, нормализованные
+A1 = (a / 31) * 20
+A2 = (b / 12) * 20
+A3 = ((c - 2000) / 50) * 20
+
+# Временная шкала
+N = 1024  # Количество точек данных как в реальном сигнале
+t = np.arange(2000, 2025, 25 / 1024)  # Время в годах от 2000 года  # Время в годах от 2000 года
+print(t)
+# Фазы, чтобы косинус обнулялся в 2000 году
+phi1 = np.pi / 2
+phi2 = np.pi / 2
+phi3 = np.pi / 2
+# Модельный сигнал как сумма трёх гармоник
+X_model = (A1 * np.cos(2 * np.pi * t / T1 + phi1) +
+           A2 * np.cos(2 * np.pi * t / T2 + phi2) +
+           A3 * np.cos(2 * np.pi * t / T3 + phi3))
+
+eps = 2.2 * np.random.randn(N_signal)
+ar = np.zeros(N_signal)
+ar[0] = eps[0]
+ar[1] = -0.7 * ar[0] + eps[1]
+
+for i in range(2, N_signal):
+    ar[i] = -0.7 * X_model[i - 1] + 0.2 * ar[i - 2] + eps[i]
+
+signal = X_model + eps + ar
+dt = 25 / 1024
+time = t
+N = len(signal)
+signal_centered = signal - np.mean(signal)
+acf = np.correlate(signal_centered, signal_centered, mode='full')[N - 1:] / N
+
+# Plot ACF
+# dt = 0.05
+plt.plot(np.arange(N) * dt, acf)
+plt.title("Autocovariance Function")
+plt.show()
+
+# Смещенная оценка АКФ
+acf_bias = np.correlate(signal_centered, signal_centered, mode='full')[N - 1:] / N
+
+# Несмещенная оценка АКФ
+acf_unbias = np.correlate(signal_centered, signal_centered, mode='full')[N - 1:] / (N - np.arange(N))
+
+# Построение графика
+# dt = 0.05
+plt.figure(figsize=(10, 6))
+
+# График смещенной оценки АКФ
+plt.plot(np.arange(N) * dt, acf_bias, label="Biased ACF")
+
+# График несмещенной оценки АКФ
+plt.plot(np.arange(N) * dt, acf_unbias, label="Unbaised ACF", linestyle='--')
+
+plt.title("ACF")
+plt.legend()
+plt.show()
+
+spectrum= np.fft.fft(acf)
+freqs = np.fft.fftshift(np.fft.fftfreq(len(acf)))  #
+plt.plot(freqs, np.abs(np.fft.fftshift(spectrum)))
+plt.yscale('log')
+plt.show()
+
+spectrum= np.fft.fft(acf)
+freqs = np.fft.fftshift(np.fft.fftfreq(len(acf)))  #
+plt.plot(freqs, np.abs(np.fft.fftshift(spectrum)))
+plt.show()
+pred_dates = np.arange(2025, 2040, dt)
+detrended_signal, poly_pred = predict_poly(time, signal, pred_dates, degree=3)
+
+plt.plot(time, signal, label="Original Signal")
+plt.plot(time, signal - detrended_signal, label="Polynomial Trend (Degree 4)")
+plt.plot(pred_dates, poly_pred, label="Polynomial Prediction", linestyle="--")
+plt.legend()
+plt.show()
+
+periods = [1, 4.6, 2]
+pred_dates = np.arange(2025,  2040, dt)
+detrended_signal_harm, harm_pred = predict_harm(time,  detrended_signal, periods, pred_dates)
+
+# График детрендированного сигнала
+plt.figure(figsize=(12, 6))
+plt.plot(time, detrended_signal, label="Detranded signal", color='blue')
+plt.plot(time, signal, label="Based signal", color='red', linestyle=':')
+# График гармонического предсказания
+plt.plot(pred_dates, harm_pred, label="Prediction of harm", color='orange', linestyle='--')
+
+# Настройка легенды и подписей
+plt.xlabel("Time")
+plt.ylabel("Amplitude")
+plt.title("Harmonic Analysis and Prediction")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+ar_order = 10
+ar_pred, _ = predict_ar(time, signal, pred_dates, ar_order)
+plt.plot(time, signal, label="Original Signal")
+plt.plot(pred_dates, ar_pred, label="AR Prediction")
+plt.show()
+
+plt.plot(time, signal, label="Original Signal")
+plt.plot(time, detrended_signal, label="Detrended Signal")
+plt.plot(pred_dates, poly_pred, label="Polynomial Prediction")
+plt.plot(pred_dates, ar_pred, label="AR Prediction")
+plt.legend()
+plt.show()
+
+comb = ar_pred + poly_pred + harm_pred
+plt.plot(time, signal, label="Original Signal")
+plt.plot(pred_dates, comb, label="Combined Prediction")
+plt.legend()
+plt.show()
