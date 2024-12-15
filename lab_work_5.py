@@ -1,3 +1,5 @@
+from cProfile import label
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -14,8 +16,8 @@ plt.hist(eps, bins=20)
 plt.show()
 
 # Сигнал с шумом
-plt.plot(k, signal + eps)
-plt.plot(k, signal)
+plt.plot(k, signal + eps, label='signal with noise')
+plt.plot(k, signal, linestyle="--", label='based signal')
 plt.legend()
 plt.title("Signal with noise")
 plt.show()
@@ -153,8 +155,16 @@ plt.legend()
 plt.title("Signal with noise")
 plt.show()
 
+# ar = np.zeros(N_signal)
+# ar[0] = eps[0]
+# ar[1] = -0.7 * ar[0] + eps[1]
+#
+# for i in range(2, N_signal):
+#     ar[i] = -0.7 * X_model[i - 1] + 0.2 * ar[i - 2] + eps[i]
+
 # Построение сигнала с добавленным ARMA процессом
 plt.plot(k, X_model + ar)
+plt.plot(k, X_model, linestyle="--", color='orange')
 plt.title("Signal with ARMA Process")
 plt.show()
 
