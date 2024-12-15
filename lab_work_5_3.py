@@ -26,71 +26,70 @@ def predict_poly_last(dates, signal, pred_dates, degree):
 
     return detrended_signal, poly_pred
 
-def harm_fit_homo(dates, signal, periods, date_start):
-    """
-    Least Squares Harmonic Fit
-    Осуществляет гармонический анализ временного ряда методом наименьших квадратов.
-
-    Параметры:
-    - dates: массив временных меток.
-    - signal: массив значений сигнала.
-    - periods: массив предполагаемых периодов гармонических компонент.
-    - date_start: начальная временная точка для расчета фаз.
-
-    Возвращает:
-    - coeffs: массив коэффициентов гармонической модели (амплитуды и фазы).
-    - model: массив значений восстановленного сигнала (гармоническая модель).
-    - covariance_matrix: ковариационная матрица коэффициентов (оценка погрешности).
-    """
-    N = len(signal)  # Количество точек сигнала
-    M = len(periods)  # Количество периодов гармоник
-    signal_centered = signal - np.mean(signal)  # Центрирование сигнала
-
-    # Построение дизайн-матрицы
-    A = np.ones((N, 2 * M))
-    for i in range(N):  # Для каждой временной точки
-        for j in range(M):  # Для каждого периода
-            omega = 2 * np.pi / periods[j]  # Угловая частота гармоники
-            A[i, 2 * j] = np.cos((dates[i] - date_start) * omega)
-            A[i, 2 * j + 1] = np.sin((dates[i] - date_start) * omega)
-
-    # Решение нормальных уравнений методом наименьших квадратов
-    AtA = A.T @ A  # Матрица А транспонированная на А
-    Atb = A.T @ signal_centered  # Матрица А транспонированная на центрированный сигнал
-    coeffs = inv(AtA) @ Atb  # Коэффициенты гармонической модели
-
-    # Построение гармонической модели
-    model = A @ coeffs
-
-    # Оценка дисперсии остатков
-    residuals = signal_centered - model  # Остатки (разность сигнала и модели)
-    variance = np.sum(residuals ** 2) / (N - 2 * M)  # Дисперсия остатков
-    covariance_matrix = variance * inv(AtA)  # Ковариационная матрица коэффициентов
-
-    return coeffs, model, covariance_matrix
-
-def predict_harm_last(dates, signal, periods, pred_dates):
-    """
-    Harmonic Prediction
-    dates: array of dates - массив временных меток
-    signal: input signal - временной ряд (сигнал)
-    periods: array of periods - массив периодов гармоник
-    pred_dates: dates for prediction - даты, для которых нужно построить прогноз
-    """
-    # 1. Гармонический анализ на основе метода наименьших квадратов
-    coeffs, harmonic_model, _ = harm_fit_homo(dates, signal, periods, dates[0])
-
-    # 2. Удаление гармонического сигнала (остаточный сигнал)
-    detrended_signal = signal - harmonic_model
-
-    # 3. Прогнозирование гармонических компонент на новые даты
-    pred_harmonics = np.zeros(len(pred_dates))
-    for k, period in enumerate(periods):
-        omega = 2 * np.pi / period
-        pred_harmonics += coeffs[2 * k] * np.cos((pred_dates - dates[0]) * omega)
-        pred_harmonics += coeffs[2 * k + 1] * np.sin((pred_dates - dates[0]) * omega)
-
-    return detrended_signal, pred_harmonics
+# def harm_fit_homo(dates, signal, periods, date_start):
+#     """
+#     Least Squares Harmonic Fit
+#     Осуществляет гармонический анализ временного ряда методом наименьших квадратов.
+#
+#     Параметры:
+#     - dates: массив временных меток.
+#     - signal: массив значений сигнала.
+#     - periods: массив предполагаемых периодов гармонических компонент.
+#     - date_start: начальная временная точка для расчета фаз.
+#
+#     Возвращает:
+#     - coeffs: массив коэффициентов гармонической модели (амплитуды и фазы).
+#     - model: массив значений восстановленного сигнала (гармоническая модель).
+#     - covariance_matrix: ковариационная матрица коэффициентов (оценка погрешности).
+#     """
+#     N = len(signal)  # Количество точек сигнала
+#     M = len(periods)  # Количество периодов гармоник
+#     signal_centered = signal - np.mean(signal)  # Центрирование сигнала
+#
+#     # Построение дизайн-матрицы
+#     A = np.ones((N, 2 * M))
+#     for i in range(N):  # Для каждой временной точки
+#         for j in range(M):  # Для каждого периода
+#             omega = 2 * np.pi / periods[j]  # Угловая частота гармоники
+#             A[i, 2 * j] = np.cos((dates[i] - date_start) * omega)
+#             A[i, 2 * j + 1] = np.sin((dates[i] - date_start) * omega)
+#
+#     # Решение нормальных уравнений методом наименьших квадратов
+#     AtA = A.T @ A  # Матрица А транспонированная на А
+#     Atb = A.T @ signal_centered  # Матрица А транспонированная на центрированный сигнал
+#     coeffs = inv(AtA) @ Atb  # Коэффициенты гармонической модели
+#
+#     # Построение гармонической модели
+#     model = A @ coeffs
+#
+#     # Оценка дисперсии остатков
+#     residuals = signal_centered - model  # Остатки (разность сигнала и модели)
+#     variance = np.sum(residuals ** 2) / (N - 2 * M)  # Дисперсия остатков
+#     covariance_matrix = variance * inv(AtA)  # Ковариационная матрица коэффициентов
+#
+#     return coeffs, model, covariance_matrix
+# def predict_harm_last(dates, signal, periods, pred_dates):
+#     """
+#     Harmonic Prediction
+#     dates: array of dates - массив временных меток
+#     signal: input signal - временной ряд (сигнал)
+#     periods: array of periods - массив периодов гармоник
+#     pred_dates: dates for prediction - даты, для которых нужно построить прогноз
+#     """
+#     # 1. Гармонический анализ на основе метода наименьших квадратов
+#     coeffs, harmonic_model, _ = harm_fit_homo(dates, signal, periods, dates[0])
+#
+#     # 2. Удаление гармонического сигнала (остаточный сигнал)
+#     detrended_signal = signal - harmonic_model
+#
+#     # 3. Прогнозирование гармонических компонент на новые даты
+#     pred_harmonics = np.zeros(len(pred_dates))
+#     for k, period in enumerate(periods):
+#         omega = 2 * np.pi / period
+#         # pred_harmonics += coeffs[2 * k] * np.cos((pred_dates - dates[0]) * omega)
+#         pred_harmonics += coeffs[2 * k + 1] * np.sin((pred_dates - dates[0]) * omega)
+#
+#     return detrended_signal, pred_harmonics
 
 
 # def predict_ar(dates, signal, pred_dates, order):
@@ -272,6 +271,107 @@ def predict_harm(dates, signal, periods, pred_dates):
 
     return detrended_signal, harm_pred
 
+
+def predict_harm_ideal(MJDsc, Xsint, Periods, MJD_pred):
+    """
+    Выполняет подгонку гармоник методом наименьших квадратов (LS) и предсказание.
+    :param MJDsc: Исходные даты
+    :param Xsint: Исходный сигнал
+    :param Periods: Массив периодов для подгонки
+    :param MJD_pred: Даты для предсказания
+    :return: Xsinh (временной ряд после удаления гармоник), harm_pred (предсказания по гармоникам)
+    """
+    # Подгонка гармоник методом наименьших квадратов
+    par, resX = harm_fit_homo_ideal(MJDsc, Xsint, Periods, MJDsc[0])
+
+    # Удаление гармоник из временного ряда
+    Xsinh = Xsint - resX
+
+    # Предсказание гармоник
+    N_p = len(MJD_pred)
+    harm_pred = np.zeros(N_p)
+
+    for k, period in enumerate(Periods):
+        for j in range(N_p):
+            harm_pred[j] += (
+                par[2 * k] * np.cos((MJD_pred[j] - MJDsc[0]) * 2 * np.pi / period) +
+                par[2 * k + 1] * np.sin((MJD_pred[j] - MJDsc[0]) * 2 * np.pi / period)
+            )
+
+    # Построение графиков
+    plt.figure()
+    plt.plot(MJDsc, Xsint, label="based signal")
+    plt.plot(MJDsc,4 *  resX, label="optimal model")
+    plt.plot(MJD_pred, 4 * harm_pred, label="prediction")
+    plt.ylabel('Amplitude')
+    plt.xlabel('Time shifts')
+    plt.legend()
+    ax = plt.gca()
+    # ax.xaxis.set_major_locator(ticker.MultipleLocator(10))
+    plt.show()
+
+    return Xsinh, harm_pred
+
+def harm_fit_homo_ideal(Dat, signal, T, date_st):
+    """
+    МНК-подбор гармоник
+    :param Dat: Даты
+    :param signal: Сигнал для анализа
+    :param T: Массив периодов
+    :param date_st: Начальная дата
+    :return: par (амплитуды гармоник), resX (модель сигнала), D (ковариационная матрица параметров)
+    """
+    N = len(signal)
+    # Размер массива периодов (число гармоник в модели)
+    M = len(T)
+
+    X = signal - np.mean(signal)
+
+    # Создание матрицы модели
+    A = np.zeros((N, 2 * M))
+    for i in range(N):
+        for j in range(M):
+            A[i, 2 * j] = np.cos((Dat[i] - date_st) * 2 * np.pi / T[j])
+            A[i, 2 * j + 1] = np.sin((Dat[i] - date_st) * 2 * np.pi / T[j])
+
+    # Нормальная матрица системы
+    NOM = A.T @ A
+
+    # Изучение обусловленности
+    U, S, V = np.linalg.svd(NOM)
+    Obusl = S[0] / S[-1]  # Обусловленность матрицы
+
+    # Обращение нормальной матрицы
+    F = np.linalg.inv(NOM)
+
+    # Оценка параметров
+    par = F @ A.T @ X
+
+    # Оптимальная модель
+    resX = A @ par
+
+    # Вычисление суммы квадратов невязок
+    sum_sq = np.sum((resX - X) ** 2)
+
+    # Оценка дисперсии единицы веса
+    sigma02 = sum_sq / (N - M)
+
+    # Вычисление ковариационной матрицы параметров
+    D = sigma02 * F
+
+    # Построение графиков
+    plt.figure()
+    plt.plot(Dat, np.real(signal), label="Based signal")
+    plt.plot(Dat, 4 * np.real(resX), label="Optimal")
+    plt.ylabel('Amplitude')
+    plt.xlabel('Time shifts')
+    plt.legend()
+    ax = plt.gca()
+    # ax.xaxis.set_major_locator(ticker.MultipleLocator(10))
+    plt.show()
+
+    return par, resX
+
 data = pd.read_excel('/Users/danilalipatov/Filtering-data/data/data_lab_5.xlsx')
 
 time = data['Column1']
@@ -308,10 +408,14 @@ plt.title("ACF")
 plt.legend()
 plt.show()
 
-spectrum= np.fft.fft(acf)
-freqs = np.fft.fftshift(np.fft.fftfreq(len(acf)))  #
-plt.plot(freqs, np.abs(np.fft.fftshift(spectrum)))
+spectrum= np.fft.fft(acf_bias)
+freqs = np.fft.fftshift(np.fft.fftfreq(len(acf_bias)))  #
+plt.plot(freqs, np.abs(np.fft.fftshift(spectrum)), label='Biased')
+spectrum= np.fft.fft(acf_unbias)
+freqs = np.fft.fftshift(np.fft.fftfreq(len(acf_unbias)))  #
+plt.plot(freqs, np.abs(np.fft.fftshift(spectrum)), linestyle='--', label='Unbiased')
 plt.yscale('log')
+plt.legend()
 plt.show()
 
 spectrum= np.fft.fft(acf)
@@ -319,7 +423,7 @@ freqs = np.fft.fftshift(np.fft.fftfreq(len(acf)))  #
 plt.plot(freqs, np.abs(np.fft.fftshift(spectrum)))
 plt.show()
 pred_dates = np.arange(2025, 2040, dt)
-detrended_signal, poly_pred = predict_poly(time, signal, pred_dates, degree=3)
+detrended_signal, poly_pred = predict_poly(time, signal, pred_dates, degree=9)
 
 plt.plot(time, signal, label="Original Signal")
 plt.plot(time, signal - detrended_signal, label="Polynomial Trend (Degree 4)")
@@ -338,6 +442,19 @@ plt.plot(time, signal, label="Based signal", color='red', linestyle=':')
 # График гармонического предсказания
 plt.plot(pred_dates, harm_pred, label="Prediction of harm", color='orange', linestyle='--')
 
+# periods = [1 , 2.4, 4.2, 5.1]
+periods = [0.6 , 2.4, 6]
+pred_dates = np.arange(2025,  2040, dt)
+detrended_signal_harm_ideal, harm_pred = predict_harm_ideal(time,  detrended_signal, periods, pred_dates)
+
+# График детрендированного сигнала
+plt.figure(figsize=(12, 6))
+plt.plot(time, detrended_signal, label="Detranded signal", color='blue')
+plt.plot(time, signal, label="Based signal", color='red', linestyle=':')
+# График гармонического предсказания
+harm_pred = 4 * harm_pred
+plt.plot(pred_dates, harm_pred, label="Prediction of harm", color='orange', linestyle='--')
+
 # Настройка легенды и подписей
 plt.xlabel("Time")
 plt.ylabel("Amplitude")
@@ -346,7 +463,7 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
-ar_order = 3
+ar_order = 9
 ar_pred, _ = predict_ar(time, signal, pred_dates, ar_order)
 plt.plot(time, signal, label="Original Signal")
 plt.plot(pred_dates, ar_pred, label="AR Prediction")
