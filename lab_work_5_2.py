@@ -307,10 +307,9 @@ eps = 2.2 * np.random.randn(N_signal)
 ar = np.zeros(N_signal)
 ar[0] = eps[0]
 ar[1] = -0.7 * ar[0] + eps[1]
-
-for i in range(2, N_signal):
-    ar[i] = -0.7 * X_model[i - 1] + 0.2 * ar[i - 2] + eps[i]
-
+ar[2] = X_model[2]
+for i in range(3, N_signal):
+    ar[i] = -0.7 * ar[i - 1] + 0.2 * ar[i - 2] + eps[i]
 signal = X_model + eps + ar
 dt = 25 / 1024
 time = t
@@ -344,18 +343,22 @@ plt.title("ACF")
 plt.legend()
 plt.show()
 
-spectrum= np.fft.fft(acf)
-freqs = np.fft.fftshift(np.fft.fftfreq(len(acf)))  #
-plt.plot(freqs, np.abs(np.fft.fftshift(spectrum)))
+spectrum= np.fft.fft(acf_bias)
+freqs = np.fft.fftshift(np.fft.fftfreq(len(acf_bias)))  #
+plt.plot(freqs, np.abs(np.fft.fftshift(spectrum)), label="Biased ACF")
+spectrum_un= np.fft.fft(acf_unbias)
+freqs = np.fft.fftshift(np.fft.fftfreq(len(acf_unbias)))  #
+plt.plot(freqs, np.abs(np.fft.fftshift(spectrum_un)), linestyle='--', label="Unbaised ACF")
 plt.yscale('log')
+plt.legend()
 plt.show()
 
 spectrum= np.fft.fft(acf)
 freqs = np.fft.fftshift(np.fft.fftfreq(len(acf)))  #
 plt.plot(freqs, np.abs(np.fft.fftshift(spectrum)))
 plt.show()
-pred_dates = np.arange(2025, 2040, dt)
-detrended_signal, poly_pred = predict_poly(time, signal, pred_dates, degree=3)
+pred_dates = np.arange(2024, 2040, dt)
+detrended_signal, poly_pred = predict_poly(time, signal, pred_dates, degree=4)
 
 plt.plot(time, signal, label="Original Signal")
 plt.plot(time, signal - detrended_signal, label="Polynomial Trend (Degree 4)")
@@ -363,10 +366,10 @@ plt.plot(pred_dates, poly_pred, label="Polynomial Prediction", linestyle="--")
 plt.legend()
 plt.show()
 
-periods = [1, 4.6, 2]
-pred_dates = np.arange(2025,  2040, dt)
+periods = [1, 4.6, 6]
+pred_dates = np.arange(2024,  2040, dt)
 detrended_signal_harm, harm_pred = predict_harm(time,  detrended_signal, periods, pred_dates)
-
+# harm_pred = max(signal) * harm_pred
 # График детрендированного сигнала
 plt.figure(figsize=(12, 6))
 plt.plot(time, detrended_signal, label="Detranded signal", color='blue')
@@ -382,7 +385,7 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
-ar_order = 10
+ar_order = 6
 ar_pred, _ = predict_ar(time, signal, pred_dates, ar_order)
 plt.plot(time, signal, label="Original Signal")
 plt.plot(pred_dates, ar_pred, label="AR Prediction")

@@ -155,12 +155,12 @@ plt.legend()
 plt.title("Signal with noise")
 plt.show()
 
-# ar = np.zeros(N_signal)
-# ar[0] = eps[0]
-# ar[1] = -0.7 * ar[0] + eps[1]
-#
-# for i in range(2, N_signal):
-#     ar[i] = -0.7 * X_model[i - 1] + 0.2 * ar[i - 2] + eps[i]
+ar = np.zeros(N_signal)
+ar[0] = eps[0]
+ar[1] = -0.7 * ar[0] + eps[1]
+ar[2] = X_model[2]
+for i in range(3, N_signal):
+    ar[i] = -0.7 * ar[i - 1] + 0.2 * ar[i - 2] + eps[i]
 
 # Построение сигнала с добавленным ARMA процессом
 plt.plot(k, X_model + ar)
