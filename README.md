@@ -15,6 +15,9 @@ For each laboratory assignment, there is an associated Python script available. 
 - [Lab 3 script](./lab_work_3.py)
 - [Lab 4 script](./lab_work_4.py)
 - [Lab 5 script](./lab_work_5.py)
+- [Lab 5_2 script](./lab_work_5_2.py)
+- [Lab 5_3 script](./lab_work_5_3.py)
+- [Lab 6 script](./lab_work_6.py)
 
 
 ### 3. **Links to Assignments**
